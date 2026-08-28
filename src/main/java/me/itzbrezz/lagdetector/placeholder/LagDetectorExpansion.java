@@ -7,14 +7,11 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class LagDetectorExpansion
-        extends PlaceholderExpansion {
+public final class LagDetectorExpansion extends PlaceholderExpansion {
 
     private final LagDetector plugin;
 
-    public LagDetectorExpansion(
-            LagDetector plugin
-    ) {
+    public LagDetectorExpansion(LagDetector plugin) {
         this.plugin = plugin;
     }
 
@@ -30,8 +27,7 @@ public final class LagDetectorExpansion
 
     @Override
     public @NotNull String getVersion() {
-        return plugin.getDescription()
-                .getVersion();
+        return plugin.getDescription().getVersion();
     }
 
     @Override
@@ -49,156 +45,84 @@ public final class LagDetectorExpansion
             Player player,
             @NotNull String params
     ) {
+        String key = params.toLowerCase();
 
-        switch (params.toLowerCase()) {
-
+        switch (key) {
             case "enabled":
-                return String.valueOf(
-                        plugin.isDetectorEnabled()
-                );
+                return String.valueOf(plugin.isDetectorEnabled());
 
             case "scanning":
                 return String.valueOf(
-                        plugin.getScanManager()
-                                .isScanning()
+                        plugin.getScanManager().isScanning()
                 );
 
-            case "scan_progress":
+            case "last_tps":
                 return String.format(
-                        "%.1f",
-                        plugin.getScanManager()
-                                .getProgress()
+                        "%.2f",
+                        plugin.getLagDetectionManager().getLastTps()
                 );
 
-            case "scanned_chunks":
+            case "last_mspt":
+                return String.format(
+                        "%.2f",
+                        plugin.getLagDetectionManager().getLastMspt()
+                );
+
+            case "active_detections":
                 return String.valueOf(
-                        plugin.getScanManager()
-                                .getScannedChunks()
+                        plugin.getLagDetectionManager()
+                                .getActiveDetectionCount()
                 );
 
-            case "total_chunks":
+            case "total_detections":
                 return String.valueOf(
-                        plugin.getScanManager()
-                                .getTotalChunks()
+                        plugin.getLagDetectionManager()
+                                .getTotalDetectionCount()
                 );
 
-            case "detections":
+            case "redstone_locations":
                 return String.valueOf(
-                        plugin.getScanManager()
-                                .getDetectedBlocks()
+                        plugin.getRedstoneDetector()
+                                .getTrackedLocations()
                 );
 
-            case "tracked_players":
+            case "redstone_suspects":
                 return String.valueOf(
-                        plugin.getPlayerTracker()
-                                .getTrackedPlayers()
+                        plugin.getRedstoneDetector()
+                                .getSuspectedMachines()
                 );
 
-            case "last_lag_type": {
-
-                LagSnapshot snapshot =
-                        plugin.getLagDetectionManager()
-                                .getLatestSnapshot();
-
-                return snapshot == null
-                        ? "None"
-                        : snapshot.getLagType();
-            }
-
-            case "last_world": {
-
-                LagSnapshot snapshot =
-                        plugin.getLagDetectionManager()
-                                .getLatestSnapshot();
-
-                return snapshot == null
-                        ? "None"
-                        : snapshot.getWorld();
-            }
-
-            case "last_x": {
-
-                LagSnapshot snapshot =
-                        plugin.getLagDetectionManager()
-                                .getLatestSnapshot();
-
-                return snapshot == null
-                        ? "0"
-                        : String.valueOf(
-                                snapshot.getX()
-                        );
-            }
-
-            case "last_y": {
-
-                LagSnapshot snapshot =
-                        plugin.getLagDetectionManager()
-                                .getLatestSnapshot();
-
-                return snapshot == null
-                        ? "0"
-                        : String.valueOf(
-                                snapshot.getY()
-                        );
-            }
-
-            case "last_z": {
-
-                LagSnapshot snapshot =
-                        plugin.getLagDetectionManager()
-                                .getLatestSnapshot();
-
-                return snapshot == null
-                        ? "0"
-                        : String.valueOf(
-                                snapshot.getZ()
-                        );
-            }
-
+            case "last_lag_type":
+            case "last_world":
+            case "last_x":
+            case "last_y":
+            case "last_z":
             case "last_player": {
-
                 LagSnapshot snapshot =
                         plugin.getLagDetectionManager()
                                 .getLatestSnapshot();
 
-                if (snapshot == null
-                        || !snapshot.hasPlayer()) {
+                if (snapshot == null) {
                     return "None";
                 }
 
-                return snapshot.getPlayer();
-            }
-
-            case "last_tps": {
-
-                LagSnapshot snapshot =
-                        plugin.getLagDetectionManager()
-                                .getLatestSnapshot();
-
-                return snapshot == null
-                        ? "0.00"
-                        : String.format(
-                                "%.2f",
-                                snapshot.getTps()
-                        );
-            }
-
-            case "last_mspt": {
-
-                LagSnapshot snapshot =
-                        plugin.getLagDetectionManager()
-                                .getLatestSnapshot();
-
-                return snapshot == null
-                        ? "0.00"
-                        : String.format(
-                                "%.2f",
-                                snapshot.getMspt()
-                        );
+                return switch (key) {
+                    case "last_lag_type" -> snapshot.getLagType();
+                    case "last_world" -> snapshot.getWorld();
+                    case "last_x" -> String.valueOf(snapshot.getX());
+                    case "last_y" -> String.valueOf(snapshot.getY());
+                    case "last_z" -> String.valueOf(snapshot.getZ());
+                    case "last_player" ->
+                            snapshot.hasPlayer()
+                                    ? snapshot.getPlayer()
+                                    : "None";
+                    default -> null;
+                };
             }
 
             default:
                 return null;
         }
     }
-    }
+}
+
