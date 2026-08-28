@@ -1,27 +1,28 @@
 package me.itzbrezz.lagdetector.command;
 
 import me.itzbrezz.lagdetector.LagDetector;
-import me.itzbrezz.lagdetector.detection.LagDetectionManager;
 import me.itzbrezz.lagdetector.detection.ScanManager;
 import me.itzbrezz.lagdetector.history.HistoryManager;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-
-public final class LagCommand implements CommandExecutor, TabCompleter {
+public final class LagCommand implements CommandExecutor {
 
     private final LagDetector plugin;
+    private final ScanManager scanManager;
+    private final HistoryManager historyManager;
 
-    public LagCommand(LagDetector plugin) {
+    public LagCommand(
+            LagDetector plugin,
+            ScanManager scanManager,
+            HistoryManager historyManager
+    ) {
         this.plugin = plugin;
+        this.scanManager = scanManager;
+        this.historyManager = historyManager;
     }
 
     @Override
@@ -32,9 +33,8 @@ public final class LagCommand implements CommandExecutor, TabCompleter {
             String[] args
     ) {
 
-        if (!sender.hasPermission("lagdetector.use")
-                && !sender.hasPermission("lagdetector.admin")) {
-            send(sender, "command-messages.no-permission");
+        if (!hasPermission(sender, "lagdetector.use")) {
+            send(sender, "messages.no-permission");
             return true;
         }
 
@@ -43,16 +43,17 @@ public final class LagCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        String subCommand = args[0].toLowerCase();
+        String subCommand =
+                args[0].toLowerCase();
 
         switch (subCommand) {
 
-            case "detector":
-                handleDetector(sender);
-                break;
-
             case "gui":
                 handleGui(sender);
+                break;
+
+            case "scan":
+                handleScan(sender);
                 break;
 
             case "history":
@@ -72,15 +73,11 @@ public final class LagCommand implements CommandExecutor, TabCompleter {
                 break;
 
             case "toggle":
-                handleToggle(sender);
-                break;
-
-            case "scan":
-                handleScan(sender);
+                handleToggle(sender, args);
                 break;
 
             default:
-                send(sender, "command-messages.unknown-command");
+                sendHelp(sender);
                 break;
         }
 
@@ -89,170 +86,344 @@ public final class LagCommand implements CommandExecutor, TabCompleter {
 
     /*
      * ============================================================
-     * DETECTOR
+     * /lag gui
      * ============================================================
      */
 
-    private void handleDetector(CommandSender sender) {
-
-        LagDetectionManager manager = plugin.getDetectionManager();
-
-        if (manager == null) {
-            sender.sendMessage(color("&cLagDetectionManager is not available."));
-            return;
-        }
-
-        sender.sendMessage(color("&8&m--------------------------------"));
-        sender.sendMessage(color("&c&lLAG DETECTOR"));
-        sender.sendMessage("");
-
-        sender.sendMessage(
-                color("&7Status: "
-                        + (plugin.isDetectorEnabled()
-                        ? "&aENABLED"
-                        : "&cDISABLED"))
-        );
-
-        sender.sendMessage(
-                color("&7Detection: "
-                        + (manager.isRunning()
-                        ? "&aRUNNING"
-                        : "&cSTOPPED"))
-        );
-
-        sender.sendMessage(
-                color("&7Current lag events: &f"
-                        + manager.getActiveDetectionCount())
-        );
-
-        sender.sendMessage(
-                color("&7Total detections: &f"
-                        + manager.getTotalDetectionCount())
-        );
-
-        sender.sendMessage(color("&8&m--------------------------------"));
-    }
-
-    /*
-     * ============================================================
-     * GUI
-     * ============================================================
-     */
-
-    private void handleGui(CommandSender sender) {
-
-        if (!sender.hasPermission("lagdetector.gui")
-                && !sender.hasPermission("lagdetector.admin")) {
-            send(sender, "command-messages.no-permission");
-            return;
-        }
+    private void handleGui(
+            CommandSender sender
+    ) {
 
         if (!(sender instanceof Player player)) {
-            send(sender, "command-messages.player-only");
+
+            send(
+                    sender,
+                    "command-messages.player-only"
+            );
+
+            return;
+        }
+
+        if (!hasPermission(
+                sender,
+                "lagdetector.gui"
+        )) {
+            send(
+                    sender,
+                    "messages.no-permission"
+            );
             return;
         }
 
         /*
-         * GUI implementation will be connected to LagGui
-         * when the GUI files are added.
+         * GUI manager will be connected in the next file.
+         *
+         * We intentionally use a safe hook here so the command
+         * can be completed without forcing chunk loading or
+         * performing any scan.
          */
-        sender.sendMessage(color("&eLagDetector GUI is being initialized."));
+        if (plugin.getLagGui() == null) {
+
+            player.sendMessage(
+                    color(
+                            "&cLag GUI is not initialized yet."
+                    )
+            );
+
+            return;
+        }
+
+        plugin.getLagGui().open(player);
     }
 
     /*
      * ============================================================
-     * HISTORY
+     * /lag scan
      * ============================================================
      */
 
-    private void handleHistory(CommandSender sender, String[] args) {
+    private void handleScan(
+            CommandSender sender
+    ) {
 
-        if (!sender.hasPermission("lagdetector.history")
-                && !sender.hasPermission("lagdetector.admin")) {
-            send(sender, "command-messages.no-permission");
+        if (!(sender instanceof Player player)) {
+
+            send(
+                    sender,
+                    "command-messages.player-only"
+            );
+
+            return;
+        }
+
+        if (!hasPermission(
+                sender,
+                "lagdetector.scan"
+        )) {
+            send(
+                    sender,
+                    "messages.no-permission"
+            );
+            return;
+        }
+
+        if (scanManager.isScanning()) {
+
+            send(
+                    sender,
+                    "command-messages.scan-running"
+            );
+
+            return;
+        }
+
+        scanManager.startScan(player);
+    }
+
+    /*
+     * ============================================================
+     * /lag history
+     * ============================================================
+     */
+
+    private void handleHistory(
+            CommandSender sender,
+            String[] args
+    ) {
+
+        if (!hasPermission(
+                sender,
+                "lagdetector.history"
+        )) {
+            send(
+                    sender,
+                    "messages.no-permission"
+            );
             return;
         }
 
         int page = 1;
 
         if (args.length >= 2) {
-            try {
-                page = Integer.parseInt(args[1]);
 
-                if (page < 1) {
-                    page = 1;
-                }
+            try {
+
+                page = Integer.parseInt(
+                        args[1]
+                );
 
             } catch (NumberFormatException exception) {
-                send(sender, "command-messages.invalid-page");
+
+                send(
+                        sender,
+                        "command-messages.invalid-page"
+                );
+
                 return;
             }
         }
 
-        HistoryManager history = plugin.getHistoryManager();
-
-        if (history == null) {
-            sender.sendMessage(color("&cHistoryManager is not available."));
-            return;
+        if (page < 1) {
+            page = 1;
         }
 
-        history.sendHistory(sender, page);
+        historyManager.sendHistory(
+                sender,
+                page
+        );
     }
 
     /*
      * ============================================================
-     * RELOAD
+     * /lag reload
      * ============================================================
      */
 
-    private void handleReload(CommandSender sender) {
+    private void handleReload(
+            CommandSender sender
+    ) {
 
-        if (!sender.hasPermission("lagdetector.reload")
-                && !sender.hasPermission("lagdetector.admin")) {
-            send(sender, "command-messages.no-permission");
+        if (!hasPermission(
+                sender,
+                "lagdetector.reload"
+        )) {
+            send(
+                    sender,
+                    "messages.no-permission"
+            );
             return;
         }
 
         plugin.reloadPlugin();
 
-        send(sender, "command-messages.reload");
+        send(
+                sender,
+                "command-messages.reload"
+        );
     }
 
     /*
      * ============================================================
-     * INFO
+     * /lag info
      * ============================================================
      */
 
-    private void handleInfo(CommandSender sender) {
+    private void handleInfo(
+            CommandSender sender
+    ) {
 
-        sender.sendMessage(color("&8&m--------------------------------"));
-        sender.sendMessage(color("&c&lLagDetector"));
+        if (!hasPermission(
+                sender,
+                "lagdetector.info"
+        )) {
+            send(
+                    sender,
+                    "messages.no-permission"
+            );
+            return;
+        }
+
+        sender.sendMessage(
+                color("&8&m--------------------------------")
+        );
+
+        sender.sendMessage(
+                color("&b&lLAG DETECTOR")
+        );
+
         sender.sendMessage("");
 
         sender.sendMessage(
-                color("&7Version: &f"
-                        + plugin.getDescription().getVersion())
+                color("&7Status: "
+                        + (
+                        plugin.isDetectorEnabled()
+                                ? "&aENABLED"
+                                : "&cDISABLED"
+                ))
         );
 
         sender.sendMessage(
-                color("&7Detector: "
-                        + (plugin.isDetectorEnabled()
-                        ? "&aENABLED"
-                        : "&cDISABLED"))
+                color("&7TPS: &f"
+                        + String.format(
+                        "%.2f",
+                        plugin.getLagDetectionManager()
+                                .getLastTps()
+                ))
         );
 
-        sender.sendMessage(color("&7Scan mode: &fLoaded chunks only"));
-        sender.sendMessage(color("&7Force loading: &cDISABLED"));
+        sender.sendMessage(
+                color("&7MSPT: &f"
+                        + String.format(
+                        "%.2f",
+                        plugin.getLagDetectionManager()
+                                .getLastMspt()
+                ))
+        );
 
-        if (plugin.getHistoryManager() != null) {
-            sender.sendMessage(
-                    color("&7History entries: &f"
-                            + plugin.getHistoryManager().size())
+        sender.sendMessage(
+                color("&7Active detections: &f"
+                        + plugin.getLagDetectionManager()
+                                .getActiveDetectionCount())
+        );
+
+        sender.sendMessage(
+                color("&7Total detections: &f"
+                        + plugin.getLagDetectionManager()
+                                .getTotalDetectionCount())
+        );
+
+        sender.sendMessage(
+                color("&7Tracked redstone locations: &f"
+                        + plugin.getRedstoneDetector()
+                                .getTrackedLocations())
+        );
+
+        sender.sendMessage(
+                color("&7History entries: &f"
+                        + historyManager.size())
+        );
+
+        sender.sendMessage("");
+
+        sender.sendMessage(
+                color("&8&m--------------------------------")
+        );
+    }
+
+    /*
+     * ============================================================
+     * /lag toggle
+     * ============================================================
+     */
+
+    private void handleToggle(
+            CommandSender sender,
+            String[] args
+    ) {
+
+        if (!hasPermission(
+                sender,
+                "lagdetector.toggle"
+        )) {
+            send(
+                    sender,
+                    "messages.no-permission"
             );
+            return;
         }
 
-        sender.sendMessage(color("&8&m--------------------------------"));
+        if (args.length < 2) {
+
+            sender.sendMessage(
+                    color(
+                            "&cUsage: /lag toggle <enable|disable>"
+                    )
+            );
+
+            return;
+        }
+
+        String mode =
+                args[1].toLowerCase();
+
+        switch (mode) {
+
+            case "enable":
+
+                plugin.setDetectorEnabled(
+                        true
+                );
+
+                send(
+                        sender,
+                        "command-messages.toggle-enabled"
+                );
+
+                break;
+
+            case "disable":
+
+                plugin.setDetectorEnabled(
+                        false
+                );
+
+                send(
+                        sender,
+                        "command-messages.toggle-disabled"
+                );
+
+                break;
+
+            default:
+
+                sender.sendMessage(
+                        color(
+                                "&cUsage: /lag toggle <enable|disable>"
+                        )
+                );
+
+                break;
+        }
     }
 
     /*
@@ -261,177 +432,81 @@ public final class LagCommand implements CommandExecutor, TabCompleter {
      * ============================================================
      */
 
-    private void sendHelp(CommandSender sender) {
+    private void sendHelp(
+            CommandSender sender
+    ) {
 
-        List<String> help =
-                plugin.getConfig().getStringList("help");
+        sender.sendMessage(
+                color("&8&m--------------------------------")
+        );
 
-        if (help.isEmpty()) {
-            sender.sendMessage(color("&cNo help messages configured."));
-            return;
-        }
+        sender.sendMessage(
+                color("&b&lLAG DETECTOR &7Commands")
+        );
 
-        for (String line : help) {
-            sender.sendMessage(color(line));
-        }
+        sender.sendMessage("");
+
+        sender.sendMessage(
+                color("&f/lag gui &7- Open lag detector GUI")
+        );
+
+        sender.sendMessage(
+                color("&f/lag scan &7- Scan loaded chunks")
+        );
+
+        sender.sendMessage(
+                color("&f/lag history [page] &7- View lag history")
+        );
+
+        sender.sendMessage(
+                color("&f/lag reload &7- Reload configuration")
+        );
+
+        sender.sendMessage(
+                color("&f/lag info &7- Show detector information")
+        );
+
+        sender.sendMessage(
+                color("&f/lag toggle enable &7- Enable detector")
+        );
+
+        sender.sendMessage(
+                color("&f/lag toggle disable &7- Disable detector")
+        );
+
+        sender.sendMessage(
+                color("&f/lag help &7- Show this help")
+        );
+
+        sender.sendMessage("");
+
+        sender.sendMessage(
+                color("&8&m--------------------------------")
+        );
     }
 
     /*
      * ============================================================
-     * TOGGLE
+     * PERMISSION
      * ============================================================
      */
 
-    private void handleToggle(CommandSender sender) {
-
-        if (!sender.hasPermission("lagdetector.admin")) {
-            send(sender, "command-messages.no-permission");
-            return;
-        }
-
-        boolean current = plugin.isDetectorEnabled();
-
-        if (current) {
-
-            plugin.setDetectorEnabled(false);
-
-            if (plugin.getDetectionManager() != null) {
-                plugin.getDetectionManager().setEnabled(false);
-            }
-
-            send(sender, "command-messages.disabled");
-
-        } else {
-
-            plugin.setDetectorEnabled(true);
-
-            if (plugin.getDetectionManager() != null) {
-                plugin.getDetectionManager().setEnabled(true);
-            }
-
-            send(sender, "command-messages.enabled");
-        }
-    }
-
-    /*
-     * ============================================================
-     * SCAN
-     * ============================================================
-     */
-
-    private void handleScan(CommandSender sender) {
-
-        if (!sender.hasPermission("lagdetector.scan")
-                && !sender.hasPermission("lagdetector.admin")) {
-            send(sender, "command-messages.no-permission");
-            return;
-        }
-
-        ScanManager scanManager = plugin.getScanManager();
-
-        if (scanManager == null) {
-            sender.sendMessage(color("&cScanManager is not available."));
-            return;
-        }
-
-        if (!scanManager.isEnabled()) {
-            send(sender, "command-messages.scan-disabled");
-            return;
-        }
-
-        if (scanManager.isScanning()) {
-            send(sender, "command-messages.scan-running");
-            return;
-        }
-
-        if (!(sender instanceof Player player)) {
-            sender.sendMessage(
-                    color("&cConsole cannot start a PLAYER centered scan.")
-            );
-            sender.sendMessage(
-                    color("&7Change scan-center.mode to WORLD_SPAWN "
-                            + "for console scanning.")
-            );
-            return;
-        }
-
-        boolean started = scanManager.startScan(player);
-
-        if (started) {
-            send(sender, "command-messages.scan-started");
-        }
-    }
-
-    /*
-     * ============================================================
-     * TAB COMPLETER
-     * ============================================================
-     */
-
-    @Override
-    public List<String> onTabComplete(
+    private boolean hasPermission(
             CommandSender sender,
-            Command command,
-            String alias,
-            String[] args
+            String permission
     ) {
 
-        if (args.length == 1) {
-
-            List<String> commands = Arrays.asList(
-                    "detector",
-                    "gui",
-                    "history",
-                    "reload",
-                    "info",
-                    "help",
-                    "toggle",
-                    "scan"
-            );
-
-            return filter(commands, args[0]);
-        }
-
-        if (args.length == 2
-                && args[0].equalsIgnoreCase("history")) {
-
-            return filter(
-                    Arrays.asList(
-                            "1",
-                            "2",
-                            "3",
-                            "4",
-                            "5"
-                    ),
-                    args[1]
-            );
-        }
-
-        return Collections.emptyList();
-    }
-
-    private List<String> filter(
-            List<String> values,
-            String input
-    ) {
-
-        List<String> result = new ArrayList<>();
-
-        for (String value : values) {
-
-            if (value.toLowerCase()
-                    .startsWith(input.toLowerCase())) {
-
-                result.add(value);
-            }
-        }
-
-        return result;
+        return sender.hasPermission(
+                permission
+        )
+                || sender.hasPermission(
+                "lagdetector.admin"
+        );
     }
 
     /*
      * ============================================================
-     * MESSAGE HELPERS
+     * MESSAGES
      * ============================================================
      */
 
@@ -442,22 +517,56 @@ public final class LagCommand implements CommandExecutor, TabCompleter {
 
         String message =
                 plugin.getConfig().getString(
-                        path,
-                        "&cMessage not configured: " + path
+                        path
                 );
 
-        sender.sendMessage(color(message));
+        if (message == null) {
+
+            message =
+                    switch (path) {
+
+                        case "messages.no-permission" ->
+                                "&cYou don't have permission.";
+
+                        case "command-messages.player-only" ->
+                                "&cThis command can only be used by a player.";
+
+                        case "command-messages.scan-running" ->
+                                "&eA scan is already running.";
+
+                        case "command-messages.invalid-page" ->
+                                "&cInvalid page number.";
+
+                        case "command-messages.reload" ->
+                                "&aLagDetector configuration reloaded.";
+
+                        case "command-messages.toggle-enabled" ->
+                                "&aLagDetector has been enabled.";
+
+                        case "command-messages.toggle-disabled" ->
+                                "&cLagDetector has been disabled.";
+
+                        default ->
+                                "&cMessage not configured.";
+                    };
+        }
+
+        sender.sendMessage(
+                color(message)
+        );
     }
 
-    private String color(String message) {
+    private String color(
+            String text
+    ) {
 
-        if (message == null) {
+        if (text == null) {
             return "";
         }
 
         return ChatColor.translateAlternateColorCodes(
                 '&',
-                message
+                text
         );
     }
-            }
+        }
