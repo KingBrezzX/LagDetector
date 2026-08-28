@@ -7,6 +7,7 @@ import me.itzbrezz.lagdetector.history.HistoryManager;
 import me.itzbrezz.lagdetector.gui.LagGui;
 import me.itzbrezz.lagdetector.detection.RedstoneDetector;
 import me.itzbrezz.lagdetector.placeholder.LagDetectorExpansion;
+import me.itzbrezz.lagdetector.player.PlayerTracker;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -26,6 +27,7 @@ public final class LagDetector extends JavaPlugin {
     private ScanManager scanManager;
     private RedstoneDetector redstoneDetector;
     private LagGui lagGui;
+    private PlayerTracker playerTracker;
     private final Map<UUID, me.itzbrezz.lagdetector.detection.LagSnapshot> guiSnapshots =
             new ConcurrentHashMap<>();
 
@@ -46,6 +48,7 @@ public final class LagDetector extends JavaPlugin {
         scanManager = new ScanManager(this);
         redstoneDetector = new RedstoneDetector(this, detectionManager);
         lagGui = new LagGui(this);
+        playerTracker = new PlayerTracker();
 
         Bukkit.getPluginManager().registerEvents(lagGui, this);
         redstoneDetector.start();
@@ -97,6 +100,10 @@ public final class LagDetector extends JavaPlugin {
 
         if (historyManager != null) {
             historyManager.save();
+        }
+
+        if (playerTracker != null) {
+            playerTracker.clear();
         }
 
         getLogger().info("LagDetector has been disabled.");
@@ -181,6 +188,26 @@ public final class LagDetector extends JavaPlugin {
         return lagGui;
     }
 
+    /**
+     * Returns the tracker responsible for monitoring
+     * player activity (e.g. AFK / last-seen state used
+     * by detection and notification logic).
+     */
+    public PlayerTracker getPlayerTracker() {
+        return playerTracker;
+    }
+
+    /**
+     * Marks the given player as active right now.
+     * Called from movement/interaction listeners to keep
+     * the PlayerTracker up to date.
+     */
+    public void updatePlayerActivity(Player player) {
+        if (player != null && playerTracker != null) {
+            playerTracker.updateActivity(player);
+        }
+    }
+
     public void setGuiSnapshot(
             Player player,
             me.itzbrezz.lagdetector.detection.LagSnapshot snapshot
@@ -220,5 +247,4 @@ public final class LagDetector extends JavaPlugin {
     public int getOnlinePlayers() {
         return Bukkit.getOnlinePlayers().size();
     }
-  }
-
+    }
