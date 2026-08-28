@@ -556,19 +556,18 @@ public final class LagDetectionManager {
      * where available through Bukkit#getServerTickManager().
      */
     private double getServerMspt() {
-
-        try {
-            return Bukkit.getServerTickManager()
-                    .getTickAverageDuration();
-        } catch (Throwable ignored) {
-            /*
-             * Safe fallback.
-             */
-            return 1000.0D / Math.max(
-                    0.1D,
-                    getServerTps()
-            );
-        }
+        /*
+         * API-safe MSPT approximation.
+         *
+         * We intentionally avoid Bukkit#getServerTickManager()
+         * because the project must compile against the configured
+         * Paper API without relying on a server implementation method
+         * that may be absent from that API.
+         */
+        return 1000.0D / Math.max(
+                0.1D,
+                getServerTps()
+        );
     }
 
     private String createKey(LagSnapshot snapshot) {
@@ -601,5 +600,19 @@ public final class LagDetectionManager {
     public double getLastMspt() {
         return lastMspt;
     }
-      }
+    
+    public LagSnapshot getLatestSnapshot() {
+        LagSnapshot latest = null;
 
+        for (LagSnapshot snapshot : activeDetections.values()) {
+            if (latest == null
+                    || snapshot.getTimestamp()
+                    > latest.getTimestamp()) {
+                latest = snapshot;
+            }
+        }
+
+        return latest;
+    }
+
+      }
