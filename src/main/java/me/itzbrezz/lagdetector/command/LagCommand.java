@@ -10,6 +10,10 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 public final class LagCommand implements CommandExecutor, TabCompleter {
 
     private final LagDetector plugin;
@@ -44,8 +48,7 @@ public final class LagCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        String subCommand =
-                args[0].toLowerCase();
+        String subCommand = args[0].toLowerCase();
 
         switch (subCommand) {
 
@@ -91,44 +94,22 @@ public final class LagCommand implements CommandExecutor, TabCompleter {
      * ============================================================
      */
 
-    private void handleGui(
-            CommandSender sender
-    ) {
+    private void handleGui(CommandSender sender) {
 
         if (!(sender instanceof Player player)) {
-
-            send(
-                    sender,
-                    "command-messages.player-only"
-            );
-
+            send(sender, "command-messages.player-only");
             return;
         }
 
-        if (!hasPermission(
-                sender,
-                "lagdetector.gui"
-        )) {
-            send(
-                    sender,
-                    "messages.no-permission"
-            );
+        if (!hasPermission(sender, "lagdetector.gui")) {
+            send(sender, "messages.no-permission");
             return;
         }
 
-        /*
-         * GUI manager will be connected in the next file.
-         *
-         * We intentionally use a safe hook here so the command
-         * can be completed without forcing chunk loading or
-         * performing any scan.
-         */
         if (plugin.getLagGui() == null) {
 
             player.sendMessage(
-                    color(
-                            "&cLag GUI is not initialized yet."
-                    )
+                    color("&cLag GUI is not initialized yet.")
             );
 
             return;
@@ -143,28 +124,15 @@ public final class LagCommand implements CommandExecutor, TabCompleter {
      * ============================================================
      */
 
-    private void handleScan(
-            CommandSender sender
-    ) {
+    private void handleScan(CommandSender sender) {
 
         if (!(sender instanceof Player player)) {
-
-            send(
-                    sender,
-                    "command-messages.player-only"
-            );
-
+            send(sender, "command-messages.player-only");
             return;
         }
 
-        if (!hasPermission(
-                sender,
-                "lagdetector.scan"
-        )) {
-            send(
-                    sender,
-                    "messages.no-permission"
-            );
+        if (!hasPermission(sender, "lagdetector.scan")) {
+            send(sender, "messages.no-permission");
             return;
         }
 
@@ -200,6 +168,7 @@ public final class LagCommand implements CommandExecutor, TabCompleter {
                     sender,
                     "messages.no-permission"
             );
+
             return;
         }
 
@@ -209,9 +178,7 @@ public final class LagCommand implements CommandExecutor, TabCompleter {
 
             try {
 
-                page = Integer.parseInt(
-                        args[1]
-                );
+                page = Integer.parseInt(args[1]);
 
             } catch (NumberFormatException exception) {
 
@@ -252,6 +219,7 @@ public final class LagCommand implements CommandExecutor, TabCompleter {
                     sender,
                     "messages.no-permission"
             );
+
             return;
         }
 
@@ -281,6 +249,7 @@ public final class LagCommand implements CommandExecutor, TabCompleter {
                     sender,
                     "messages.no-permission"
             );
+
             return;
         }
 
@@ -295,53 +264,67 @@ public final class LagCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage("");
 
         sender.sendMessage(
-                color("&7Status: "
-                        + (
-                        plugin.isDetectorEnabled()
-                                ? "&aENABLED"
-                                : "&cDISABLED"
-                ))
+                color(
+                        "&7Status: "
+                                + (
+                                plugin.isDetectorEnabled()
+                                        ? "&aENABLED"
+                                        : "&cDISABLED"
+                        )
+                )
         );
 
         sender.sendMessage(
-                color("&7TPS: &f"
-                        + String.format(
-                        "%.2f",
-                        plugin.getLagDetectionManager()
-                                .getLastTps()
-                ))
+                color(
+                        "&7TPS: &f"
+                                + String.format(
+                                "%.2f",
+                                plugin.getLagDetectionManager()
+                                        .getLastTps()
+                        )
+                )
         );
 
         sender.sendMessage(
-                color("&7MSPT: &f"
-                        + String.format(
-                        "%.2f",
-                        plugin.getLagDetectionManager()
-                                .getLastMspt()
-                ))
+                color(
+                        "&7MSPT: &f"
+                                + String.format(
+                                "%.2f",
+                                plugin.getLagDetectionManager()
+                                        .getLastMspt()
+                        )
+                )
         );
 
         sender.sendMessage(
-                color("&7Active detections: &f"
-                        + plugin.getLagDetectionManager()
-                                .getActiveDetectionCount())
+                color(
+                        "&7Active detections: &f"
+                                + plugin.getLagDetectionManager()
+                                        .getActiveDetectionCount()
+                )
         );
 
         sender.sendMessage(
-                color("&7Total detections: &f"
-                        + plugin.getLagDetectionManager()
-                                .getTotalDetectionCount())
+                color(
+                        "&7Total detections: &f"
+                                + plugin.getLagDetectionManager()
+                                        .getTotalDetectionCount()
+                )
         );
 
         sender.sendMessage(
-                color("&7Tracked redstone locations: &f"
-                        + plugin.getRedstoneDetector()
-                                .getTrackedLocations())
+                color(
+                        "&7Tracked redstone locations: &f"
+                                + plugin.getRedstoneDetector()
+                                        .getTrackedLocations()
+                )
         );
 
         sender.sendMessage(
-                color("&7History entries: &f"
-                        + historyManager.size())
+                color(
+                        "&7History entries: &f"
+                                + historyManager.size()
+                )
         );
 
         sender.sendMessage("");
@@ -370,6 +353,7 @@ public final class LagCommand implements CommandExecutor, TabCompleter {
                     sender,
                     "messages.no-permission"
             );
+
             return;
         }
 
@@ -384,16 +368,13 @@ public final class LagCommand implements CommandExecutor, TabCompleter {
             return;
         }
 
-        String mode =
-                args[1].toLowerCase();
+        String mode = args[1].toLowerCase();
 
         switch (mode) {
 
             case "enable":
 
-                plugin.setDetectorEnabled(
-                        true
-                );
+                plugin.setDetectorEnabled(true);
 
                 send(
                         sender,
@@ -404,9 +385,7 @@ public final class LagCommand implements CommandExecutor, TabCompleter {
 
             case "disable":
 
-                plugin.setDetectorEnabled(
-                        false
-                );
+                plugin.setDetectorEnabled(false);
 
                 send(
                         sender,
@@ -497,9 +476,7 @@ public final class LagCommand implements CommandExecutor, TabCompleter {
             String permission
     ) {
 
-        return sender.hasPermission(
-                permission
-        )
+        return sender.hasPermission(permission)
                 || sender.hasPermission(
                 "lagdetector.admin"
         );
@@ -517,45 +494,48 @@ public final class LagCommand implements CommandExecutor, TabCompleter {
     ) {
 
         String message =
-                plugin.getConfig().getString(
-                        path
-                );
+                plugin.getConfig().getString(path);
 
         if (message == null) {
 
-            message =
-                    switch (path) {
+            message = switch (path) {
 
-                        case "messages.no-permission" ->
-                                "&cYou don't have permission.";
+                case "messages.no-permission" ->
+                        "&cYou don't have permission.";
 
-                        case "command-messages.player-only" ->
-                                "&cThis command can only be used by a player.";
+                case "command-messages.player-only" ->
+                        "&cThis command can only be used by a player.";
 
-                        case "command-messages.scan-running" ->
-                                "&eA scan is already running.";
+                case "command-messages.scan-running" ->
+                        "&eA scan is already running.";
 
-                        case "command-messages.invalid-page" ->
-                                "&cInvalid page number.";
+                case "command-messages.invalid-page" ->
+                        "&cInvalid page number.";
 
-                        case "command-messages.reload" ->
-                                "&aLagDetector configuration reloaded.";
+                case "command-messages.reload" ->
+                        "&aLagDetector configuration reloaded.";
 
-                        case "command-messages.toggle-enabled" ->
-                                "&aLagDetector has been enabled.";
+                case "command-messages.toggle-enabled" ->
+                        "&aLagDetector has been enabled.";
 
-                        case "command-messages.toggle-disabled" ->
-                                "&cLagDetector has been disabled.";
+                case "command-messages.toggle-disabled" ->
+                        "&cLagDetector has been disabled.";
 
-                        default ->
-                                "&cMessage not configured.";
-                    };
+                default ->
+                        "&cMessage not configured.";
+            };
         }
 
         sender.sendMessage(
                 color(message)
         );
     }
+
+    /*
+     * ============================================================
+     * COLOR
+     * ============================================================
+     */
 
     private String color(
             String text
@@ -570,18 +550,25 @@ public final class LagCommand implements CommandExecutor, TabCompleter {
                 text
         );
     }
-        }
+
+    /*
+     * ============================================================
+     * TAB COMPLETION
+     * ============================================================
+     */
 
     @Override
-    public java.util.List<String> onTabComplete(
+    public List<String> onTabComplete(
             CommandSender sender,
             Command command,
             String alias,
             String[] args
     ) {
+
         if (args.length == 1) {
-            java.util.List<String> options = new java.util.ArrayList<>(
-                    java.util.List.of(
+
+            List<String> options = new ArrayList<>(
+                    List.of(
                             "gui",
                             "scan",
                             "history",
@@ -593,22 +580,33 @@ public final class LagCommand implements CommandExecutor, TabCompleter {
             );
 
             String input = args[0].toLowerCase();
-            options.removeIf(option -> !option.startsWith(input));
+
+            options.removeIf(
+                    option -> !option.startsWith(input)
+            );
+
             return options;
         }
 
         if (args.length == 2
                 && args[0].equalsIgnoreCase("toggle")) {
+
+            List<String> options = new ArrayList<>(
+                    List.of(
+                            "enable",
+                            "disable"
+                    )
+            );
+
             String input = args[1].toLowerCase();
-            java.util.List<String> options =
-                    new java.util.ArrayList<>(
-                            java.util.List.of("enable", "disable")
-                    );
-            options.removeIf(option -> !option.startsWith(input));
+
+            options.removeIf(
+                    option -> !option.startsWith(input)
+            );
+
             return options;
         }
 
-        return java.util.Collections.emptyList();
+        return Collections.emptyList();
     }
-
-
+            }
