@@ -1,4 +1,4 @@
-￼package me.itzbrezz.lagdetector.detection;
+package me.itzbrezz.lagdetector.detection;
 
 import me.itzbrezz.lagdetector.LagDetector;
 import org.bukkit.Bukkit;
@@ -602,3 +602,4 @@ public final class LagDetectionManager {
         return lastMspt;
     }
       }
+
