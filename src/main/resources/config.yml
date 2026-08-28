@@ -1,0 +1,528 @@
+# ============================================================
+# LagDetector
+# Advanced Paper Lag & Redstone Detection System
+# ============================================================
+
+plugin:
+  enabled: true
+
+# ============================================================
+# DETECTOR
+# ============================================================
+
+detector:
+  enabled: true
+
+  # Detect redstone activity that may contribute to server lag.
+  redstone:
+    enabled: true
+
+    # Redstone activity threshold per second.
+    threshold-per-second: 500
+
+    # Number of consecutive checks required before creating
+    # a lag detection.
+    required-checks: 3
+
+  # Server performance detection.
+  performance:
+    enabled: true
+
+    # TPS below this value can create a lag event.
+    tps-threshold: 18.0
+
+    # MSPT above this value can create a lag event.
+    mspt-threshold: 50.0
+
+
+# ============================================================
+# SCAN
+# ============================================================
+
+scan:
+  enabled: true
+
+  # IMPORTANT:
+  # The scanner NEVER force-loads chunks.
+  loaded-chunks-only: true
+
+  # Never generate/load an unloaded chunk during scanning.
+  force-load-chunks: false
+
+  # Maximum scan radius from the selected center.
+  radius: 128
+
+  # Chunks processed in one batch.
+  chunks-per-batch: 2
+
+  # Delay between scan batches in ticks.
+  # 20 ticks = approximately 1 second.
+  delay-ticks: 2
+
+  # Maximum blocks checked from a chunk during one scan operation.
+  blocks-per-chunk: 256
+
+  # Prevent multiple scans from running simultaneously.
+  prevent-concurrent-scans: true
+
+  # Show scan progress.
+  progress:
+    enabled: true
+
+    # Send progress to console.
+    console: true
+
+    # Send progress to the player who started the scan.
+    player: true
+
+    # Progress message every X percent.
+    percent-step: 10
+
+
+# ============================================================
+# SCAN CENTER
+# ============================================================
+
+scan-center:
+
+  # Available:
+  #
+  # PLAYER
+  #   Scan around the player's current location.
+  #
+  # WORLD_SPAWN
+  #   Scan around the world's spawn.
+  #
+  mode: PLAYER
+
+
+# ============================================================
+# WORLD SETTINGS
+# ============================================================
+
+worlds:
+
+  # If whitelist-enabled is true,
+  # ONLY worlds listed here can be scanned.
+  whitelist-enabled: true
+
+  whitelist:
+    - world
+    - world_nether
+    - world_the_end
+
+  # Worlds listed here will NEVER be scanned.
+  blacklist-enabled: true
+
+  blacklist:
+    - lobby
+    - spawn
+    - test
+
+
+# ============================================================
+# WHAT THE SCANNER DETECTS
+# ============================================================
+
+detection:
+
+  redstone:
+    enabled: true
+
+    # Redstone components to inspect.
+    blocks:
+      - REDSTONE_WIRE
+      - REDSTONE_TORCH
+      - REDSTONE_WALL_TORCH
+      - REPEATER
+      - COMPARATOR
+      - PISTON
+      - STICKY_PISTON
+      - OBSERVER
+      - TARGET
+      - DISPENSER
+      - DROPPER
+      - HOPPER
+      - REDSTONE_BLOCK
+
+  # Detect block entities commonly involved in machines.
+  block-entities:
+    enabled: true
+
+  # Detect nearby entities which may be involved in lag machines.
+  entities:
+    enabled: true
+
+
+# ============================================================
+# LAG ALERT
+# ============================================================
+
+alert:
+
+  enabled: true
+
+  # Send alert to online staff.
+  chat: true
+
+  # Send alert to console.
+  console: true
+
+  # Permission required to receive alerts.
+  permission: lagdetector.alert
+
+
+# ============================================================
+# PERIODIC CONSOLE / STACK REPORT
+# ============================================================
+
+reports:
+
+  enabled: true
+
+  console: true
+
+  stacktrace: true
+
+  # Only one report is sent per configured interval.
+  once-per-interval: true
+
+  # Available values:
+  #
+  # 10  = every 10 seconds
+  # 20  = every 20 seconds
+  # 30  = every 30 seconds
+  # 60  = every 1 minute
+  #
+  interval-seconds: 60
+
+  # Include the current TPS.
+  include-tps: true
+
+  # Include current MSPT.
+  include-mspt: true
+
+  # Include detected lag locations.
+  include-locations: true
+
+  # Maximum number of locations included in one report.
+  max-locations: 10
+
+
+# ============================================================
+# ACTIONS
+# ============================================================
+
+actions:
+
+  # ----------------------------------------------------------
+  # BAN
+  # ----------------------------------------------------------
+
+  ban:
+    enabled: true
+
+    # Command executed by console.
+    #
+    # Available placeholders:
+    # %player%
+    # %world%
+    # %x%
+    # %y%
+    # %z%
+    #
+    command: "ban %player% Lag machine detected"
+
+    name: "&cBAN"
+
+    success-message: "&aPlayer &f%player% &ahas been banned."
+
+  # ----------------------------------------------------------
+  # EXPLODE
+  # ----------------------------------------------------------
+
+  explode:
+    enabled: true
+
+    name: "&6EXPLODE"
+
+    # If true, the action disables/destroys the detected
+    # redstone core instead of blindly damaging a large area.
+    emergency-stop: true
+
+    # Optional visual explosion.
+    visual-effect: true
+
+    # Actual block damage from the explosion.
+    destroy-blocks: false
+
+    # Explosion power used only when visual-effect is enabled.
+    power: 0.0
+
+    success-message: "&6Redstone core emergency-stopped at &f%x% %y% %z%&6."
+
+
+  # ----------------------------------------------------------
+  # TELEPORT
+  # ----------------------------------------------------------
+
+  teleport:
+    enabled: true
+
+    name: "&bTP"
+
+    # Teleport directly to the detected redstone core.
+    to-core: true
+
+    success-message: "&bTeleported to the detected redstone core."
+
+
+  # ----------------------------------------------------------
+  # BREAK
+  # ----------------------------------------------------------
+
+  break:
+    enabled: true
+
+    name: "&cBREAK"
+
+    # Break the detected redstone core.
+    break-core: true
+
+    # Drop the broken block normally.
+    drop-items: true
+
+    # Create protection sign after breaking the core.
+    create-sign: true
+
+    success-message: "&cRedstone core has been broken."
+
+
+# ============================================================
+# PROTECTION SIGN
+# ============================================================
+
+sign:
+
+  enabled: true
+
+  # Sign material.
+  material: OAK_SIGN
+
+  # Text can be customized freely.
+  #
+  # Maximum visible text depends on Minecraft sign rendering.
+  lines:
+    - "&8-------------"
+    - "&cPROTECT BY ANTI LAG"
+    - "&cMACHINES"
+    - "&8-------------"
+
+  # Place the sign next to the destroyed core.
+  attach-to-core: true
+
+
+# ============================================================
+# CHAT ALERT FORMAT
+# ============================================================
+
+messages:
+
+  lag-alert:
+    - "&8&m--------------------------------"
+    - "&c&lLAG DETECTOR"
+    - ""
+    - "&7LAG TYPE: &f%lag_type%"
+    - "&7WORLD: &f%world%"
+    - "&7COORDS: &f%x% %y% %z%"
+    - "&7PLAYER: &f%player%"
+    - "&7LAST ONLINE: &f%last_online%"
+    - "&7PLAY TIME: &f%play_time%"
+    - ""
+    - "&eACTION"
+    - "&f[ &cBAN &f] [ &6EXPLODE &f] [ &bTP &f] [ &cBREAK &f]"
+    - "&8&m--------------------------------"
+
+
+# ============================================================
+# HISTORY
+# ============================================================
+
+history:
+
+  enabled: true
+
+  # Maximum saved lag events.
+  max-entries: 500
+
+  # Save history to disk.
+  persistent: true
+
+  # File used for history.
+  file: history.yml
+
+  # History entries shown per page.
+  entries-per-page: 5
+
+
+# ============================================================
+# HISTORY FORMAT
+# ============================================================
+
+history-message:
+
+  entry:
+    - "&8&m--------------------------------"
+    - "&c&lLAG SUS"
+    - "&7LOCATION: &f%x% %y% %z%"
+    - "&7WORLD: &f%world%"
+    - "&7LAG TYPE: &f%lag_type%"
+    - "&7PLAYER: &f%player%"
+    - "&7LAST ONLINE: &f%last_online%"
+    - ""
+    - "&eACTION"
+    - "&f[ &bTP &f] [ &cBAN &f] [ &cBREAK &f]"
+    - "&8&m--------------------------------"
+
+
+# ============================================================
+# GUI
+# ============================================================
+
+gui:
+
+  enabled: true
+
+  title: "&8LagDetector"
+
+  size: 54
+
+  filler:
+    enabled: true
+    material: GRAY_STAINED_GLASS_PANE
+    name: " "
+
+  items:
+
+    detector:
+      slot: 20
+      material: REDSTONE
+      name: "&cLag Detector"
+      lore:
+        - "&7View detector status."
+        - ""
+        - "&eClick to view."
+
+    scan:
+      slot: 22
+      material: COMPASS
+      name: "&bScan"
+      lore:
+        - "&7Scan loaded chunks."
+        - "&7Unloaded chunks are ignored."
+        - ""
+        - "&eClick to scan."
+
+    history:
+      slot: 24
+      material: BOOK
+      name: "&6History"
+      lore:
+        - "&7View detected lag events."
+        - ""
+        - "&eClick to open."
+
+    toggle:
+      slot: 31
+      material: LEVER
+      name: "&aToggle Detector"
+      lore:
+        - "&7Enable or disable detection."
+        - ""
+        - "&eClick to toggle."
+
+    reload:
+      slot: 40
+      material: REDSTONE_TORCH
+      name: "&eReload"
+      lore:
+        - "&7Reload configuration."
+        - ""
+        - "&eClick to reload."
+
+
+# ============================================================
+# COMMAND MESSAGES
+# ============================================================
+
+command-messages:
+
+  no-permission: "&cYou don't have permission to use this command."
+
+  player-only: "&cThis command can only be used by a player."
+
+  reload: "&aLagDetector configuration reloaded."
+
+  enabled: "&aLagDetector has been enabled."
+
+  disabled: "&cLagDetector has been disabled."
+
+  already-enabled: "&eLagDetector is already enabled."
+
+  already-disabled: "&eLagDetector is already disabled."
+
+  scan-started: "&aLag scan started."
+
+  scan-running: "&eA lag scan is already running."
+
+  scan-disabled: "&cScanning is currently disabled."
+
+  world-disabled: "&cThis world is disabled for scanning."
+
+  no-loaded-chunks: "&eNo loaded chunks were found in the selected scan area."
+
+  scan-completed: "&aLag scan completed."
+
+  history-empty: "&eThere are no recorded lag events."
+
+  invalid-page: "&cInvalid history page."
+
+  unknown-command: "&cUnknown subcommand. Use &f/lag help&c."
+
+
+# ============================================================
+# HELP
+# ============================================================
+
+help:
+
+  - "&8&m--------------------------------"
+  - "&c&lLagDetector &7Commands"
+  - ""
+  - "&f/lag detector &7- Detector information"
+  - "&f/lag gui &7- Open management GUI"
+  - "&f/lag history &7- View lag history"
+  - "&f/lag history <page> &7- View a history page"
+  - "&f/lag reload &7- Reload configuration"
+  - "&f/lag info &7- Plugin information"
+  - "&f/lag help &7- Show this help"
+  - "&f/lag toggle &7- Enable/disable detector"
+  - "&f/lag scan &7- Scan loaded chunks"
+  - "&8&m--------------------------------"
+
+
+# ============================================================
+# INFO
+# ============================================================
+
+info:
+
+  lines:
+    - "&8&m--------------------------------"
+    - "&c&lLagDetector"
+    - "&7Version: &f%version%"
+    - "&7Status: &f%status%"
+    - "&7Scan mode: &fLoaded chunks only"
+    - "&7Force loading: &cDisabled"
+    - "&7History: &f%history_size%"
+    - "&8&m--------------------------------"
