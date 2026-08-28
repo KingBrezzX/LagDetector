@@ -4,7 +4,10 @@ import me.itzbrezz.lagdetector.LagDetector;
 import me.itzbrezz.lagdetector.detection.LagSnapshot;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.World;
+import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -21,7 +24,7 @@ public final class LagGui implements Listener {
     private final LagDetector plugin;
 
     private static final String TITLE =
-            "§8§lLAG DETECTOR";
+            "Â§8Â§lLAG DETECTOR";
 
     public LagGui(LagDetector plugin) {
         this.plugin = plugin;
@@ -871,14 +874,14 @@ public final class LagGui implements Listener {
     private static final class WorldCheckResult {
 
         private final boolean valid;
-        private final org.bukkit.Location location;
+        private final Location location;
 
         private WorldCheckResult(
                 boolean valid,
-                org.bukkit.Location location
+                Location location
         ) {
             this.valid = valid;
             this.location = location;
         }
     }
-  }
+            }
