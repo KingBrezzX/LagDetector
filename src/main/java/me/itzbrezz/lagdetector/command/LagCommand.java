@@ -7,9 +7,10 @@ import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 
-public final class LagCommand implements CommandExecutor {
+public final class LagCommand implements CommandExecutor, TabCompleter {
 
     private final LagDetector plugin;
     private final ScanManager scanManager;
@@ -570,3 +571,44 @@ public final class LagCommand implements CommandExecutor {
         );
     }
         }
+
+    @Override
+    public java.util.List<String> onTabComplete(
+            CommandSender sender,
+            Command command,
+            String alias,
+            String[] args
+    ) {
+        if (args.length == 1) {
+            java.util.List<String> options = new java.util.ArrayList<>(
+                    java.util.List.of(
+                            "gui",
+                            "scan",
+                            "history",
+                            "reload",
+                            "info",
+                            "help",
+                            "toggle"
+                    )
+            );
+
+            String input = args[0].toLowerCase();
+            options.removeIf(option -> !option.startsWith(input));
+            return options;
+        }
+
+        if (args.length == 2
+                && args[0].equalsIgnoreCase("toggle")) {
+            String input = args[1].toLowerCase();
+            java.util.List<String> options =
+                    new java.util.ArrayList<>(
+                            java.util.List.of("enable", "disable")
+                    );
+            options.removeIf(option -> !option.startsWith(input));
+            return options;
+        }
+
+        return java.util.Collections.emptyList();
+    }
+
+
