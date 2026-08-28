@@ -34,6 +34,15 @@ public final class ScanManager {
     private int totalChunks;
     private int processedChunks;
 
+    /*
+     * NOTE: not populated by ScanManager itself yet â€” this
+     * manager only walks already-loaded chunks, it doesn't
+     * run redstone/lag-source analysis. Wire this up (e.g.
+     * incrementDetectedBlocks()) once RedstoneDetector reports
+     * findings back here, otherwise this will always read 0.
+     */
+    private int detectedBlocks;
+
     private int lastProgress = -1;
 
     public ScanManager(LagDetector plugin) {
@@ -242,6 +251,7 @@ public final class ScanManager {
 
         scanning = true;
         processedChunks = 0;
+        detectedBlocks = 0;
         lastProgress = -1;
 
         sendStartMessage();
@@ -571,6 +581,7 @@ public final class ScanManager {
 
         totalChunks = 0;
         processedChunks = 0;
+        detectedBlocks = 0;
 
         lastProgress = -1;
     }
@@ -720,6 +731,50 @@ public final class ScanManager {
         );
     }
 
+    /*
+     * ------------------------------------------------------
+     * Aliases below exist because ProgressDisplay.java calls
+     * these specific method names. Kept as thin wrappers over
+     * the original fields/getters above so nothing else in
+     * this class had to change.
+     * ------------------------------------------------------
+     */
+
+    /**
+     * Alias for {@link #getProgressPercent()}.
+     */
+    public int getProgress() {
+        return getProgressPercent();
+    }
+
+    /**
+     * Alias for {@link #getProcessedChunks()}.
+     */
+    public int getScannedChunks() {
+        return getProcessedChunks();
+    }
+
+    /**
+     * Number of lag-causing blocks detected during the current
+     * (or most recently completed) scan.
+     *
+     * NOTE: ScanManager does not currently run redstone/lag
+     * analysis itself (see the detectedBlocks field comment),
+     * so this always returns 0 until that wiring exists.
+     */
+    public int getDetectedBlocks() {
+        return detectedBlocks;
+    }
+
+    /**
+     * Call this once ScanManager (or whatever it delegates to)
+     * actually finds a lag-causing block, so getDetectedBlocks()
+     * reflects real data.
+     */
+    public void incrementDetectedBlocks() {
+        detectedBlocks++;
+    }
+
     /**
      * Immutable chunk coordinate.
      */
@@ -766,4 +821,4 @@ public final class ScanManager {
             return result;
         }
     }
-                               }
+            }
