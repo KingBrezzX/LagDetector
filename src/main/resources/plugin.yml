@@ -1,0 +1,42 @@
+name: LagDetector
+version: '1.0.0'
+main: me.itzbrezz.lagdetector.LagDetector
+api-version: '26.2'
+description: Advanced Paper lag and redstone detection system with safe loaded-chunk scanning, lag alerts, history, GUI management, and configurable actions.
+author: ItzBrezz
+
+commands:
+  lag:
+    description: Main LagDetector command
+    usage: /lag <detector|gui|history|reload|info|help|toggle|scan>
+    aliases:
+      - lagdetector
+
+permissions:
+  lagdetector.admin:
+    description: Full access to LagDetector
+    default: op
+
+  lagdetector.use:
+    description: Use LagDetector commands
+    default: op
+
+  lagdetector.scan:
+    description: Run lag scans
+    default: op
+
+  lagdetector.gui:
+    description: Open LagDetector GUI
+    default: op
+
+  lagdetector.history:
+    description: View LagDetector history
+    default: op
+
+  lagdetector.action:
+    description: Use LagDetector actions
+    default: op
+
+  lagdetector.reload:
+    description: Reload LagDetector configuration
+    default: op
