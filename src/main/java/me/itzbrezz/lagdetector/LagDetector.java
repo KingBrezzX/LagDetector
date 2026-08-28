@@ -4,10 +4,18 @@ import me.itzbrezz.lagdetector.command.LagCommand;
 import me.itzbrezz.lagdetector.detection.LagDetectionManager;
 import me.itzbrezz.lagdetector.detection.ScanManager;
 import me.itzbrezz.lagdetector.history.HistoryManager;
+import me.itzbrezz.lagdetector.gui.LagGui;
+import me.itzbrezz.lagdetector.detection.RedstoneDetector;
+import me.itzbrezz.lagdetector.placeholder.LagDetectorExpansion;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import org.bukkit.ChatColor;
+import org.bukkit.entity.Player;
 
 public final class LagDetector extends JavaPlugin {
 
@@ -16,6 +24,10 @@ public final class LagDetector extends JavaPlugin {
     private HistoryManager historyManager;
     private LagDetectionManager detectionManager;
     private ScanManager scanManager;
+    private RedstoneDetector redstoneDetector;
+    private LagGui lagGui;
+    private final Map<UUID, me.itzbrezz.lagdetector.detection.LagSnapshot> guiSnapshots =
+            new ConcurrentHashMap<>();
 
     private boolean detectorEnabled;
 
@@ -32,8 +44,22 @@ public final class LagDetector extends JavaPlugin {
         historyManager = new HistoryManager(this);
         detectionManager = new LagDetectionManager(this);
         scanManager = new ScanManager(this);
+        redstoneDetector = new RedstoneDetector(this, detectionManager);
+        lagGui = new LagGui(this);
 
-        LagCommand lagCommand = new LagCommand(this);
+        Bukkit.getPluginManager().registerEvents(lagGui, this);
+        redstoneDetector.start();
+
+        if (Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
+            new LagDetectorExpansion(this).register();
+            getLogger().info("PlaceholderAPI expansion registered.");
+        }
+
+        LagCommand lagCommand = new LagCommand(
+                this,
+                scanManager,
+                historyManager
+        );
 
         if (getCommand("lag") != null) {
             getCommand("lag").setExecutor(lagCommand);
@@ -63,6 +89,10 @@ public final class LagDetector extends JavaPlugin {
 
         if (scanManager != null) {
             scanManager.stop();
+        }
+
+        if (redstoneDetector != null) {
+            redstoneDetector.stop();
         }
 
         if (historyManager != null) {
@@ -129,6 +159,59 @@ public final class LagDetector extends JavaPlugin {
 
     public void setDetectorEnabled(boolean enabled) {
         this.detectorEnabled = enabled;
+
+        if (detectionManager != null) {
+            detectionManager.setEnabled(enabled);
+        }
+
+        if (redstoneDetector != null) {
+            redstoneDetector.setEnabled(enabled);
+        }
+    }
+
+    public LagDetectionManager getLagDetectionManager() {
+        return detectionManager;
+    }
+
+    public RedstoneDetector getRedstoneDetector() {
+        return redstoneDetector;
+    }
+
+    public LagGui getLagGui() {
+        return lagGui;
+    }
+
+    public void setGuiSnapshot(
+            Player player,
+            me.itzbrezz.lagdetector.detection.LagSnapshot snapshot
+    ) {
+        if (player != null && snapshot != null) {
+            guiSnapshots.put(player.getUniqueId(), snapshot);
+        }
+    }
+
+    public me.itzbrezz.lagdetector.detection.LagSnapshot getGuiSnapshot(
+            Player player
+    ) {
+        if (player == null) {
+            return null;
+        }
+
+        return guiSnapshots.get(player.getUniqueId());
+    }
+
+    public void removeGuiSnapshot(Player player) {
+        if (player != null) {
+            guiSnapshots.remove(player.getUniqueId());
+        }
+    }
+
+    public String color(String text) {
+        if (text == null) {
+            return "";
+        }
+
+        return ChatColor.translateAlternateColorCodes('&', text);
     }
 
     /**
@@ -138,3 +221,4 @@ public final class LagDetector extends JavaPlugin {
         return Bukkit.getOnlinePlayers().size();
     }
   }
+
